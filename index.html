@@ -377,6 +377,12 @@
                 <button class="btn btn-purple" onclick="requestNotificationPermission()" style="width: 100%; margin-bottom: 10px;">
                     <i class="fa-solid fa-bell"></i> تفعيل الإشعارات المستمرة والاهتزاز
                 </button>
+                
+                <!-- زر اختبار بعد 10 ثوانٍ مع قفل الشاشة -->
+                <button class="btn btn-amber" onclick="testLockScreenReminder()" style="width: 100%; margin-bottom: 10px;">
+                    <i class="fa-solid fa-clock"></i> اختبار التنبيه بعد 10 ثوانٍ (اغلق الشاشة الآن!)
+                </button>
+
                 <button class="btn btn-secondary" onclick="triggerExpenseReminder(true)" style="width: 100%;">
                     <i class="fa-solid fa-volume-high"></i> تجربة التنبيه المستمر والصوت الآن
                 </button>
@@ -540,44 +546,51 @@
             });
         }
 
-        function playReminderSound() {
+        // دالة تشغيل رنة تنبيه مطولة (حوالي 4 ثوانٍ من النغمات المتكررة)
+        function playLongLoudRingtone() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const now = ctx.currentTime;
                 
-                const osc1 = ctx.createOscillator();
-                const gain1 = ctx.createGain();
-                osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(523.25, now);
-                gain1.gain.setValueAtTime(0.3, now);
-                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-                osc1.connect(gain1);
-                gain1.connect(ctx.destination);
-                osc1.start(now);
-                osc1.stop(now + 0.4);
+                // نغمة مكونة من 3 دقات متكررة طوال 4 ثوانٍ
+                for (let i = 0; i < 4; i++) {
+                    const startTime = ctx.currentTime + (i * 0.9);
 
-                const osc2 = ctx.createOscillator();
-                const gain2 = ctx.createGain();
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(659.25, now + 0.15);
-                gain2.gain.setValueAtTime(0.3, now + 0.15);
-                gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
-                osc2.connect(gain2);
-                gain2.connect(ctx.destination);
-                osc2.start(now + 0.15);
-                osc2.stop(now + 0.6);
+                    // النغمة الأولى
+                    const osc1 = ctx.createOscillator();
+                    const gain1 = ctx.createGain();
+                    osc1.type = 'sine';
+                    osc1.frequency.setValueAtTime(587.33, startTime); // D5
+                    gain1.gain.setValueAtTime(0.5, startTime);
+                    gain1.gain.exponentialRampToValueAtTime(0.01, startTime + 0.25);
+                    osc1.connect(gain1);
+                    gain1.connect(ctx.destination);
+                    osc1.start(startTime);
+                    osc1.stop(startTime + 0.25);
+
+                    // النغمة الثانية
+                    const osc2 = ctx.createOscillator();
+                    const gain2 = ctx.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(880, startTime + 0.25); // A5
+                    gain2.gain.setValueAtTime(0.5, startTime + 0.25);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, startTime + 0.6);
+                    osc2.connect(gain2);
+                    gain2.connect(ctx.destination);
+                    osc2.start(startTime + 0.25);
+                    osc2.stop(startTime + 0.6);
+                }
             } catch (e) {
-                console.log("الصوت محجوب:", e);
+                console.log("الصوت محجوب من المتصفح:", e);
             }
         }
 
         function speakReminder() {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // إيقاف أي قراءة سابقة
+                window.speechSynthesis.cancel();
                 const speech = new SpeechSynthesisUtterance("تذكير، لم تقم بتسجيل مصروفاتك اليوم");
                 speech.lang = 'ar-EG';
-                speech.pitch = 1;
-                speech.rate = 0.9;
+                speech.pitch = 1.1;
+                speech.rate = 0.85;
                 window.speechSynthesis.speak(speech);
             }
         }
@@ -587,29 +600,31 @@
             const hasExpenseToday = state.transactions.some(t => t.date === todayStr && t.type === 'expense');
 
             if (!hasExpenseToday || force) {
-                // 1. تشغيل صوت التنبيه
-                playReminderSound();
+                // 1. تشغيل الرنة المطولة
+                playLongLoudRingtone();
 
-                // 2. تفعيل نمط الاهتزاز (Vibration API)
+                // 2. نمط اهتزاز مطول للموبايل (نَبَضات متكررة)
                 if ("vibrate" in navigator) {
-                    navigator.vibrate([400, 200, 400, 200, 800]);
+                    navigator.vibrate([500, 200, 500, 200, 500, 200, 1000]);
                 }
 
-                // 3. النطق الصوتي باللغة العربية
-                speakReminder();
+                // 3. النطق الصوتي للتذكير بعد ثانية من الرنة
+                setTimeout(() => {
+                    speakReminder();
+                }, 1500);
 
-                // 4. إرسال إشعار مستمر (Persistent Notification via Service Worker)
+                // 4. إظهار الإشعار الثابت على الشاشة المغلقة
                 if ("Notification" in window && Notification.permission === "granted") {
                     const notificationOptions = {
                         body: "انت مسجلتش مصروفاتك النهارده!",
                         icon: "https://cdn-icons-png.flaticon.com/512/2983/2983780.png",
                         badge: "https://cdn-icons-png.flaticon.com/512/2983/2983780.png",
-                        vibrate: [400, 200, 400, 200, 800],
-                        requireInteraction: true, // يضمن بقاء الإشعار ثابتاً ولا يختفي تلقائياً
+                        vibrate: [500, 200, 500, 200, 500, 200, 1000],
+                        requireInteraction: true,
                         actions: [
                             { action: 'open', title: 'تسجيل الآن 📝' }
                         ],
-                        tag: 'expense-reminder-tag' // لمنع تكرار نفس الإشعار
+                        tag: 'expense-reminder-tag'
                     };
 
                     if (swRegistration) {
@@ -623,11 +638,19 @@
             }
         }
 
+        // دالة اختبار قفل الشاشة مع التنبيه والاهتزاز المطول
+        function testLockScreenReminder() {
+            alert("سيتم تشغيل التنبيه والاهتزاز المطول بعد 10 ثوانٍ.\n\nاغلق شاشة الموبايل فوراً واختبر!");
+            setTimeout(() => {
+                triggerExpenseReminder(true);
+            }, 10000);
+        }
+
         function checkAndScheduleReminder() {
             triggerExpenseReminder(false);
             setInterval(() => {
                 triggerExpenseReminder(false);
-            }, 4 * 60 * 60 * 1000); // فحص كل ساعتين
+            }, 4 * 60 * 60 * 1000); // تكرار كل 4 ساعات
         }
 
         // --- DYNAMIC MEALS & RECIPES SYSTEM ---
