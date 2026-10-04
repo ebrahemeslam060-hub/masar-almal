@@ -9,11 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
-    
-    <!-- Chart.js & QRCode.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
     <style>
         :root {
             --bg-primary: #0f172a;
@@ -37,7 +33,6 @@
             display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;
         }
         .navbar-brand { display: flex; align-items: center; gap: 10px; font-size: 1.25rem; font-weight: 700; color: var(--accent-green); }
-        .nav-actions { display: flex; align-items: center; gap: 10px; }
         .nav-links { display: flex; gap: 10px; }
         .nav-btn { background: transparent; border: none; color: var(--text-muted); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.3s; }
         .nav-btn.active, .nav-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
@@ -112,24 +107,8 @@
         .wizard-step-panel { display: none; }
         .wizard-step-panel.active { display: block; }
 
-        /* QR Code Modal Styling */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
-            z-index: 1000; justify-content: center; align-items: center;
-        }
-        .modal.active { display: flex; }
-        .modal-content {
-            background: #1e293b; border: 1px solid var(--border-color);
-            padding: 25px; border-radius: 16px; text-align: center; max-width: 320px; width: 90%;
-        }
-        #qrcode-container {
-            background: #fff; padding: 15px; border-radius: 12px;
-            display: inline-block; margin: 15px 0;
-        }
-
         @media (max-width: 768px) {
-            .nav-links { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 8px 0; z-index: 99; }
+            .nav-links { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 8px 0; }
             .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; padding: 4px; }
             .step-wizard-header { flex-direction: column; gap: 10px; align-items: flex-start; }
             .recipe-item-row { grid-template-columns: 1fr 1fr; }
@@ -144,25 +123,11 @@
             <i class="fa-solid fa-chart-line"></i>
             <span>مسار المال</span>
         </div>
-        <div class="nav-actions">
-            <button class="btn btn-secondary" onclick="openQRModal()" title="رمز QR للتنقل"><i class="fa-solid fa-qrcode"></i></button>
-            <button id="install-btn" class="btn btn-amber" style="display: none;" onclick="installPWA()"><i class="fa-solid fa-download"></i> تثبيت التطبيق</button>
-        </div>
         <div class="nav-links">
             <button class="nav-btn active" onclick="switchTab('dashboard')"><i class="fa-solid fa-house"></i> الرئيسية</button>
             <button class="nav-btn" onclick="switchTab('food-planner')"><i class="fa-solid fa-utensils"></i> ميزانية والتغذية</button>
             <button class="nav-btn" onclick="switchTab('transactions')"><i class="fa-solid fa-list-check"></i> الحركات</button>
             <button class="nav-btn" onclick="switchTab('setup')"><i class="fa-solid fa-sliders"></i> الإعدادات</button>
-        </div>
-    </div>
-
-    <!-- QR Modal -->
-    <div id="qr-modal" class="modal">
-        <div class="modal-content">
-            <h3 style="color: var(--accent-amber);">مسح كود QR للتنقل</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">امسح الكود بالكاميرا لفتح التطبيق على الموبايل بسرعة</p>
-            <div id="qrcode-container"></div>
-            <button class="btn btn-red" style="width: 100%;" onclick="closeQRModal()">إغلاق</button>
         </div>
     </div>
 
@@ -411,49 +376,6 @@
     </div>
 
     <script>
-        // --- PWA SERVICE WORKER & INSTALL PROMPT ---
-        let deferredPrompt;
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(() => {
-                console.log('Service Worker Registered');
-            });
-        }
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('install-btn').style.display = 'inline-flex';
-        });
-
-        function installPWA() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        document.getElementById('install-btn').style.display = 'none';
-                    }
-                    deferredPrompt = null;
-                });
-            }
-        }
-
-        // --- QR CODE MODAL LOGIC ---
-        function openQRModal() {
-            const container = document.getElementById('qrcode-container');
-            container.innerHTML = '';
-            new QRCode(container, {
-                text: window.location.href,
-                width: 180,
-                height: 180
-            });
-            document.getElementById('qr-modal').classList.add('active');
-        }
-
-        function closeQRModal() {
-            document.getElementById('qr-modal').classList.remove('active');
-        }
-
-        // --- APP LOGIC ---
         const CATEGORIES = {
             basics: { label: "الأساسيات", ratio: 0.50, color: "#3b82f6" },
             invest: { label: "الاستثمار", ratio: 0.20, color: "#10b981" },
@@ -470,10 +392,11 @@
             transactions: []
         };
 
-        let mealsData = [];
+        let mealsData = []; // الوجبات محفوظة بـ IndexedDB بشكل مستقل
         let db = null;
         let chartInstance = null;
 
+        // --- INDEXEDDB IMPLEMENTATION FOR PERMANENT MEALS STORAGE ---
         function initDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open('MasarAlMalMealsDB', 1);
@@ -574,6 +497,8 @@
             }
         }
 
+        // --- NOTIFICATIONS & AUDIO REMINDER SYSTEM ---
+
         function requestNotificationPermission() {
             if (!("Notification" in window)) {
                 alert("المتصفح لا يدعم نظام الإشعارات.");
@@ -593,10 +518,11 @@
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const now = ctx.currentTime;
                 
+                // النغمة الأولى
                 const osc1 = ctx.createOscillator();
                 const gain1 = ctx.createGain();
                 osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(523.25, now);
+                osc1.frequency.setValueAtTime(523.25, now); // C5
                 gain1.gain.setValueAtTime(0.3, now);
                 gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
                 osc1.connect(gain1);
@@ -604,10 +530,11 @@
                 osc1.start(now);
                 osc1.stop(now + 0.4);
 
+                // النغمة الثانية
                 const osc2 = ctx.createOscillator();
                 const gain2 = ctx.createGain();
                 osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(659.25, now + 0.15);
+                osc2.frequency.setValueAtTime(659.25, now + 0.15); // E5
                 gain2.gain.setValueAtTime(0.3, now + 0.15);
                 gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
                 osc2.connect(gain2);
@@ -637,11 +564,15 @@
         }
 
         function checkAndScheduleReminder() {
+            // فحص إدخال المصروفات تلقائياً
             triggerExpenseReminder(false);
+            // إعادة التذكير كل ساعتين إذا لم يسجل
             setInterval(() => {
                 triggerExpenseReminder(false);
             }, 2 * 60 * 60 * 1000);
         }
+
+        // --- DYNAMIC MEALS & RECIPES SYSTEM ---
 
         function addRecipeRow(name = '', qty = '', unit = 'جرام', unitPrice = '') {
             const container = document.getElementById('recipe-inputs-container');
@@ -787,6 +718,8 @@
             }
         }
 
+        // --- CALCULATIONS & ROTATION ---
+
         function calculateTotals() {
             const targetDays = parseInt(document.getElementById('plan-days').value) || 1;
             const tbody = document.getElementById('totals-table-body');
@@ -902,6 +835,7 @@
             }
         }
 
+        // --- DASHBOARD & CORE LOGIC ---
         document.getElementById('setup-form').addEventListener('submit', (e) => {
             e.preventDefault();
             state.salary = parseFloat(document.getElementById('setup-salary').value);
