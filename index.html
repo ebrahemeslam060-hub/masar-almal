@@ -41,6 +41,21 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
+        /* Progress Bar UI */
+        .progress-bar-bg {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            height: 8px;
+            width: 100%;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.3s ease;
+        }
+
         /* Step Wizard UI */
         .step-wizard-header {
             display: flex; justify-content: space-between; align-items: center;
@@ -392,9 +407,16 @@
             transactions: []
         };
 
-        let mealsData = []; // الوجبات محفوظة بـ IndexedDB بشكل مستقل
+        let mealsData = [];
         let db = null;
         let chartInstance = null;
+
+        // --- SERVICE WORKER REGISTRATION FOR PWA ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('Service Worker Registered Successfully'))
+                .catch(err => console.log('Service Worker Registration Failed:', err));
+        }
 
         // --- INDEXEDDB IMPLEMENTATION FOR PERMANENT MEALS STORAGE ---
         function initDB() {
@@ -477,8 +499,11 @@
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
             document.getElementById(tabId).classList.add('active');
-            if (event) event.currentTarget.classList.add('active');
+            
+            const activeBtn = document.querySelector(`.nav-btn[onclick*="${tabId}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
         }
 
         function goToWizardStep(stepNum) {
@@ -518,11 +543,10 @@
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const now = ctx.currentTime;
                 
-                // النغمة الأولى
                 const osc1 = ctx.createOscillator();
                 const gain1 = ctx.createGain();
                 osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(523.25, now); // C5
+                osc1.frequency.setValueAtTime(523.25, now);
                 gain1.gain.setValueAtTime(0.3, now);
                 gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
                 osc1.connect(gain1);
@@ -530,11 +554,10 @@
                 osc1.start(now);
                 osc1.stop(now + 0.4);
 
-                // النغمة الثانية
                 const osc2 = ctx.createOscillator();
                 const gain2 = ctx.createGain();
                 osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(659.25, now + 0.15); // E5
+                osc2.frequency.setValueAtTime(659.25, now + 0.15);
                 gain2.gain.setValueAtTime(0.3, now + 0.15);
                 gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
                 osc2.connect(gain2);
@@ -564,9 +587,7 @@
         }
 
         function checkAndScheduleReminder() {
-            // فحص إدخال المصروفات تلقائياً
             triggerExpenseReminder(false);
-            // إعادة التذكير كل ساعتين إذا لم يسجل
             setInterval(() => {
                 triggerExpenseReminder(false);
             }, 2 * 60 * 60 * 1000);
