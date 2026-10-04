@@ -377,12 +377,6 @@
                 <button class="btn btn-purple" onclick="requestNotificationPermission()" style="width: 100%; margin-bottom: 10px;">
                     <i class="fa-solid fa-bell"></i> تفعيل الإشعارات المستمرة والاهتزاز
                 </button>
-                
-                <!-- زر اختبار بعد 10 ثوانٍ مع قفل الشاشة -->
-                <button class="btn btn-amber" onclick="testLockScreenReminder()" style="width: 100%; margin-bottom: 10px;">
-                    <i class="fa-solid fa-clock"></i> اختبار التنبيه بعد 10 ثوانٍ (اغلق الشاشة الآن!)
-                </button>
-
                 <button class="btn btn-secondary" onclick="triggerExpenseReminder(true)" style="width: 100%;">
                     <i class="fa-solid fa-volume-high"></i> تجربة التنبيه المستمر والصوت الآن
                 </button>
@@ -579,7 +573,7 @@
 
         function speakReminder() {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
+                window.speechSynthesis.cancel(); // إيقاف أي قراءة سابقة
                 const speech = new SpeechSynthesisUtterance("تذكير، لم تقم بتسجيل مصروفاتك اليوم");
                 speech.lang = 'ar-EG';
                 speech.pitch = 1;
@@ -593,25 +587,29 @@
             const hasExpenseToday = state.transactions.some(t => t.date === todayStr && t.type === 'expense');
 
             if (!hasExpenseToday || force) {
+                // 1. تشغيل صوت التنبيه
                 playReminderSound();
 
+                // 2. تفعيل نمط الاهتزاز (Vibration API)
                 if ("vibrate" in navigator) {
                     navigator.vibrate([400, 200, 400, 200, 800]);
                 }
 
+                // 3. النطق الصوتي باللغة العربية
                 speakReminder();
 
+                // 4. إرسال إشعار مستمر (Persistent Notification via Service Worker)
                 if ("Notification" in window && Notification.permission === "granted") {
                     const notificationOptions = {
                         body: "انت مسجلتش مصروفاتك النهارده!",
                         icon: "https://cdn-icons-png.flaticon.com/512/2983/2983780.png",
                         badge: "https://cdn-icons-png.flaticon.com/512/2983/2983780.png",
                         vibrate: [400, 200, 400, 200, 800],
-                        requireInteraction: true,
+                        requireInteraction: true, // يضمن بقاء الإشعار ثابتاً ولا يختفي تلقائياً
                         actions: [
                             { action: 'open', title: 'تسجيل الآن 📝' }
                         ],
-                        tag: 'expense-reminder-tag'
+                        tag: 'expense-reminder-tag' // لمنع تكرار نفس الإشعار
                     };
 
                     if (swRegistration) {
@@ -625,19 +623,11 @@
             }
         }
 
-        // دالة الاختبار لتجربة الشاشة المغلقة
-        function testLockScreenReminder() {
-            alert("سيتم إرسال التنبيه بعد 10 ثوانٍ. اغلق شاشة الموبايل فوراً واختبر!");
-            setTimeout(() => {
-                triggerExpenseReminder(true);
-            }, 10000);
-        }
-
         function checkAndScheduleReminder() {
             triggerExpenseReminder(false);
             setInterval(() => {
                 triggerExpenseReminder(false);
-            }, 4 * 60 * 60 * 1000); // تكرار كل 4 ساعات
+            }, 2 * 60 * 60 * 1000); // فحص كل ساعتين
         }
 
         // --- DYNAMIC MEALS & RECIPES SYSTEM ---
