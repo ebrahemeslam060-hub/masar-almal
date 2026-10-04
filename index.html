@@ -41,7 +41,6 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Progress Bar UI */
         .progress-bar-bg {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
@@ -56,7 +55,6 @@
             transition: width 0.3s ease;
         }
 
-        /* Step Wizard UI */
         .step-wizard-header {
             display: flex; justify-content: space-between; align-items: center;
             background: rgba(15, 23, 42, 0.5); padding: 15px 20px; border-radius: 12px;
@@ -122,6 +120,29 @@
         .wizard-step-panel { display: none; }
         .wizard-step-panel.active { display: block; }
 
+        /* On-Screen Notification Banner */
+        #screen-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #ef4444;
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 9999;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-weight: bold;
+            border: 2px solid #fff;
+        }
+        #screen-toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
         @media (max-width: 768px) {
             .nav-links { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 8px 0; }
             .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; padding: 4px; }
@@ -131,6 +152,12 @@
     </style>
 </head>
 <body>
+
+    <!-- On-Screen Notification Banner -->
+    <div id="screen-toast">
+        <i class="fa-solid fa-bell fa-bounce" style="font-size: 1.5rem;"></i>
+        <span id="toast-message">تذكير: لم تقم بتسجيل مصروفاتك اليوم!</span>
+    </div>
 
     <!-- Navbar Header -->
     <div class="navbar">
@@ -224,7 +251,7 @@
                 </div>
             </div>
 
-            <!-- STEP 1 PANEL: MEAL & RECIPE BUILDER -->
+            <!-- STEP 1 PANEL -->
             <div id="wizard-step-1" class="wizard-step-panel active">
                 <div class="card">
                     <h3><i class="fa-solid fa-utensils" style="color: var(--accent-amber)"></i> إضافة أو تعديل الوجبة والوصفات</h3>
@@ -232,7 +259,6 @@
                         قم بإدخال اسم الوجبة ومكوناتها يدوياً، وستحفظ الوجبات في دليلك الخاص بشكل دائم ولن تُحذف عند ضبط المصنع.
                     </p>
 
-                    <!-- Meal Form Container -->
                     <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); padding: 18px; border-radius: 12px; margin-bottom: 20px;">
                         <input type="hidden" id="editing-meal-id" value="">
                         <div class="form-group">
@@ -240,9 +266,7 @@
                             <input type="text" id="current-meal-name" class="form-control" placeholder="مثال: كشري، صينية بطاطس، بيتزا...">
                         </div>
 
-                        <div id="recipe-inputs-container" style="margin-top: 15px;">
-                            <!-- Dynamic Recipe Fields Appear Here -->
-                        </div>
+                        <div id="recipe-inputs-container" style="margin-top: 15px;"></div>
 
                         <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
                             <button class="btn btn-secondary" onclick="addRecipeRow()">
@@ -257,7 +281,6 @@
                         </div>
                     </div>
 
-                    <!-- List of Saved Meals -->
                     <h4 style="margin-bottom: 12px; color: var(--accent-blue);">
                         <i class="fa-solid fa-list"></i> الوجبات والوصفات المضافة (<span id="meals-count">0</span>):
                     </h4>
@@ -273,7 +296,7 @@
                 </div>
             </div>
 
-            <!-- STEP 2 PANEL: TOTAL SHOPPING LIST & CALCULATIONS -->
+            <!-- STEP 2 PANEL -->
             <div id="wizard-step-2" class="wizard-step-panel">
                 <div class="card">
                     <h3><i class="fa-solid fa-calculator" style="color: var(--accent-blue)"></i> تجميع وحساب الكميات المشتريات والتكلفة</h3>
@@ -289,8 +312,7 @@
                         </div>
                     </div>
 
-                    <div id="rotation-info" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--accent-blue); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: var(--accent-blue); font-size: 0.9rem;">
-                    </div>
+                    <div id="rotation-info" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--accent-blue); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: var(--accent-blue); font-size: 0.9rem;"></div>
 
                     <hr style="border-color: var(--border-color); margin: 20px 0;">
 
@@ -373,18 +395,19 @@
                 <hr style="margin: 20px 0; border-color: var(--border-color);">
                 
                 <h4 style="margin-bottom: 10px; color: var(--accent-purple);"><i class="fa-solid fa-bell"></i> نظام التنبيهات والاهتزاز المستمر</h4>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">سيظهر إشعار ثابت على الشاشة مع اهتزاز ونطق صوتي لا يختفي حتى تقوم بالتسجيل.</p>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">تأكد من السماح بالإشعارات لتصلك التنبيهات على الشاشة مع الاهتزاز والصوت.</p>
                 <button class="btn btn-purple" onclick="requestNotificationPermission()" style="width: 100%; margin-bottom: 10px;">
                     <i class="fa-solid fa-bell"></i> تفعيل الإشعارات المستمرة والاهتزاز
                 </button>
+
+                <!-- زر التجربة المباشرة للتنبيه والاهتزاز والصوت -->
+                <button class="btn btn-secondary" onclick="triggerExpenseReminder(true)" style="width: 100%; margin-bottom: 10px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6;">
+                    <i class="fa-solid fa-volume-high"></i> تجربة التنبيه والاهتزاز والصوت الآن 🔥
+                </button>
                 
-                <!-- زر اختبار بعد 10 ثوانٍ مع قفل الشاشة -->
+                <!-- زر اختبار بعد 10 ثوانٍ -->
                 <button class="btn btn-amber" onclick="testLockScreenReminder()" style="width: 100%; margin-bottom: 10px;">
                     <i class="fa-solid fa-clock"></i> اختبار التنبيه بعد 10 ثوانٍ (اغلق الشاشة الآن!)
-                </button>
-
-                <button class="btn btn-secondary" onclick="triggerExpenseReminder(true)" style="width: 100%;">
-                    <i class="fa-solid fa-volume-high"></i> تجربة التنبيه المستمر والصوت الآن
                 </button>
 
                 <hr style="margin: 20px 0; border-color: var(--border-color);">
@@ -421,9 +444,9 @@
             navigator.serviceWorker.register('./sw.js')
                 .then(reg => {
                     swRegistration = reg;
-                    console.log('Service Worker Registered Successfully');
+                    console.log('Service Worker Registered');
                 })
-                .catch(err => console.log('Service Worker Registration Failed:', err));
+                .catch(err => console.log('SW Fail:', err));
         }
 
         // --- INDEXEDDB IMPLEMENTATION ---
@@ -530,7 +553,7 @@
             }
         }
 
-        // --- ADVANCED NOTIFICATION & MULTI-SENSORY REMINDER SYSTEM ---
+        // --- FULL REMINDER & MULTI-SENSORY SYSTEM ---
 
         function requestNotificationPermission() {
             if (!("Notification" in window)) {
@@ -546,20 +569,17 @@
             });
         }
 
-        // دالة تشغيل رنة تنبيه مطولة (حوالي 4 ثوانٍ من النغمات المتكررة)
+        // تشغيل صوت الرنة المطولة
         function playLongLoudRingtone() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // نغمة مكونة من 3 دقات متكررة طوال 4 ثوانٍ
                 for (let i = 0; i < 4; i++) {
                     const startTime = ctx.currentTime + (i * 0.9);
 
-                    // النغمة الأولى
                     const osc1 = ctx.createOscillator();
                     const gain1 = ctx.createGain();
                     osc1.type = 'sine';
-                    osc1.frequency.setValueAtTime(587.33, startTime); // D5
+                    osc1.frequency.setValueAtTime(587.33, startTime); 
                     gain1.gain.setValueAtTime(0.5, startTime);
                     gain1.gain.exponentialRampToValueAtTime(0.01, startTime + 0.25);
                     osc1.connect(gain1);
@@ -567,11 +587,10 @@
                     osc1.start(startTime);
                     osc1.stop(startTime + 0.25);
 
-                    // النغمة الثانية
                     const osc2 = ctx.createOscillator();
                     const gain2 = ctx.createGain();
                     osc2.type = 'sine';
-                    osc2.frequency.setValueAtTime(880, startTime + 0.25); // A5
+                    osc2.frequency.setValueAtTime(880, startTime + 0.25); 
                     gain2.gain.setValueAtTime(0.5, startTime + 0.25);
                     gain2.gain.exponentialRampToValueAtTime(0.01, startTime + 0.6);
                     osc2.connect(gain2);
@@ -580,10 +599,11 @@
                     osc2.stop(startTime + 0.6);
                 }
             } catch (e) {
-                console.log("الصوت محجوب من المتصفح:", e);
+                console.log("الصوت محجوب:", e);
             }
         }
 
+        // النطق الصوتي الفوري: "تذكير، لم تقم بتسجيل مصروفاتك اليوم"
         function speakReminder() {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -595,35 +615,48 @@
             }
         }
 
+        // إظهار إشعار بارز في أعلى شاشة التطبيق
+        function showScreenToast(message) {
+            const toast = document.getElementById('screen-toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 6000);
+        }
+
         function triggerExpenseReminder(force = false) {
             const todayStr = new Date().toISOString().split('T')[0];
             const hasExpenseToday = state.transactions.some(t => t.date === todayStr && t.type === 'expense');
 
             if (!hasExpenseToday || force) {
-                // 1. تشغيل الرنة المطولة
-                playLongLoudRingtone();
-
-                // 2. نمط اهتزاز مطول للموبايل (نَبَضات متكررة)
+                
+                // 1. الاهتزاز الفوري المكرر والقوي
                 if ("vibrate" in navigator) {
-                    navigator.vibrate([500, 200, 500, 200, 500, 200, 1000]);
+                    try {
+                        navigator.vibrate([500, 200, 500, 200, 500, 200, 1000]);
+                    } catch (e) { console.log(e); }
                 }
 
-                // 3. النطق الصوتي للتذكير بعد ثانية من الرنة
+                // 2. تشغيل نغمة الصوت
+                playLongLoudRingtone();
+
+                // 3. النطق الصوتي بعد 1 ثانية
                 setTimeout(() => {
                     speakReminder();
-                }, 1500);
+                }, 1000);
 
-                // 4. إظهار الإشعار الثابت على الشاشة المغلقة
+                // 4. إظهار الإشعار على الشاشة فوراً
+                showScreenToast("تذكير: لم تقم بتسجيل مصروفاتك اليوم!");
+
+                // 5. إرسال إشعار النظام المباشر
                 if ("Notification" in window && Notification.permission === "granted") {
                     const notificationOptions = {
-                        body: "انت مسجلتش مصروفاتك النهارده!",
+                        body: "تذكير: لم تقم بتسجيل مصروفاتك اليوم!",
                         icon: "https://cdn-icons-png.flaticon.com/512/2983/2983780.png",
                         badge: "https://cdn-icons-png.flaticon.com/512/2983/2983780.png",
                         vibrate: [500, 200, 500, 200, 500, 200, 1000],
                         requireInteraction: true,
-                        actions: [
-                            { action: 'open', title: 'تسجيل الآن 📝' }
-                        ],
                         tag: 'expense-reminder-tag'
                     };
 
@@ -632,15 +665,12 @@
                     } else {
                         new Notification("مسار المال 💰", notificationOptions);
                     }
-                } else if (force) {
-                    alert("تنبيه: انت مسجلتش مصروفاتك النهارده!");
                 }
             }
         }
 
-        // دالة اختبار قفل الشاشة مع التنبيه والاهتزاز المطول
         function testLockScreenReminder() {
-            alert("سيتم تشغيل التنبيه والاهتزاز المطول بعد 10 ثوانٍ.\n\nاغلق شاشة الموبايل فوراً واختبر!");
+            alert("سيتم تشغيل التنبيه والإشعار والاهتزاز المطول بعد 10 ثوانٍ.\n\nاغلق شاشة الموبايل الآن واختبر!");
             setTimeout(() => {
                 triggerExpenseReminder(true);
             }, 10000);
@@ -650,7 +680,7 @@
             triggerExpenseReminder(false);
             setInterval(() => {
                 triggerExpenseReminder(false);
-            }, 4 * 60 * 60 * 1000); // تكرار كل 4 ساعات
+            }, 4 * 60 * 60 * 1000);
         }
 
         // --- DYNAMIC MEALS & RECIPES SYSTEM ---
