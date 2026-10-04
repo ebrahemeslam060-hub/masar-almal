@@ -21,5 +21,3 @@
   "display": "standalone",
   "orientation": "portrait"
 }
-
-
